@@ -1,0 +1,4 @@
+*.css
+*.scss
+node_modules/
+build/
