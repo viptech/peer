@@ -1,0 +1,34 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+.env
+#needed to find out what this file is for
+
+# dependencies
+/node_modules
+
+# testing
+/coverage
+
+#storybook
+/storybook-static
+
+# production
+/build
+/peer
+
+# misc
+.DS_Store
+npm-debug.log
+/.idea
+
+# Vscode
+.vscode/*
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
