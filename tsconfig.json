@@ -1,0 +1,40 @@
+{
+    "compilerOptions": {
+        "baseUrl": "src",
+        "target": "es5",
+        "lib": ["es2017", "dom"],
+        "strict": false,
+        "noEmit": true,
+        "allowJs": true,
+        "module": "esnext",
+        "jsx": "react",
+        "skipLibCheck": true,
+        "noImplicitAny": false,
+        "noImplicitThis": true,
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "strictNullChecks": true,
+        "resolveJsonModule": true,
+        "moduleResolution": "node",
+        "experimentalDecorators": true,
+        "noFallthroughCasesInSwitch": true,
+        "useUnknownInCatchVariables": false,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "emitDeclarationOnly": true,
+        "declaration": true,
+    },
+    "include": ["src"],
+    // Optional, exclude some patterns from typescript
+    "exclude": [
+        "build",
+        "public",
+        "node_modules",
+        "**/__tests__",
+        "**/__mocks__",
+        "**/__snapshots__",
+        "**/*.test.*",
+        "**/*.spec.*",
+        "**/*.mock.*"
+    ]
+}

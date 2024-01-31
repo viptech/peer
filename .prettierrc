@@ -1,0 +1,21 @@
+{
+  "arrowParens": "always",
+  "bracketSameLine": true,
+  "bracketSpacing": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 120,
+  "tabWidth": 4,
+  "semi": true,
+  "endOfLine": "lf",
+  "jsxBracketSameLine": false,
+  "overrides": [
+    {
+      "files": "*.scss",
+      "options": {
+        "tabWidth": 4,
+        "singleQuote": false
+      }
+    }
+  ]
+}
