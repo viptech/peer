@@ -1,0 +1,16 @@
+{
+  "type": "module",
+  "dependencies": {
+    "uuid": "^9.0.1"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
+  },
+  "name": "peer_2",
+  "version": "1.0.1",
+  "description": "simple peer library",
+  "main": "index.js",
+  "author": "Peer HIS team",
+  "types": "index.d.ts"
+}
