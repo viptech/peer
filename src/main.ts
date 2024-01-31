@@ -4,11 +4,6 @@ import { v4 } from 'uuid';
 
 import { TRTCPeerConnection, TMediaStream, TRTCIceCandidate, TRTCSessionDescription } from './types';
 
-const consoleLog = (...args) => {
-    console.log('---------LOG------------', ...args);
-    // console.log('---------LOG------------', args[0]);
-};
-
 const sessionConstraints = {
     mandatory: {
         OfferToReceiveAudio: true,
@@ -35,9 +30,10 @@ type TOptions = {
     offerOptions?: RTCOfferOptions,
     answerOptions?: RTCAnswerOptions,
     channelName?: string,
+    consoleLog: (...args: any[]) => void,
 }
 
-class Peer extends EventEmitter {
+class HelsiPeer extends EventEmitter {
     private readonly initiator: boolean;
     private readonly wrtc: {
         RTCPeerConnection: typeof TRTCPeerConnection
@@ -59,6 +55,8 @@ class Peer extends EventEmitter {
     private _channel: RTCDataChannel | null;
     private destroyed: boolean;
     private destroying: boolean;
+    private getStats: (cb: (err: string | null, reports?: any[]) => void) => void;
+    private consoleLog: (...args: any[]) => void;
 
     constructor(options: TOptions) {
         super();
@@ -78,6 +76,11 @@ class Peer extends EventEmitter {
 
         this.destroyed = false;
         this.destroying = false;
+
+        this.consoleLog = options.consoleLog;
+        this.getStats = cb => {
+            this._getStats(cb);
+        };
 
         this.peerConnection.addEventListener('connectionstatechange', () => {
             this._onConnectionStateChange();
@@ -121,10 +124,10 @@ class Peer extends EventEmitter {
 
         this._start()
             .then(r => {
-                consoleLog('start then', r);
+                this.consoleLog('start then', r);
             })
             .catch(err => {
-                consoleLog(`ERROR catch start, ${err}`);
+                this.consoleLog(`ERROR catch start, ${err}`);
             });
     }
 
@@ -132,7 +135,7 @@ class Peer extends EventEmitter {
         try {
             await this._addLocalStream();
         } catch (error) {
-            consoleLog('ERROR -> start', error);
+            this.consoleLog('ERROR -> start', error);
         }
     }
 
@@ -142,12 +145,12 @@ class Peer extends EventEmitter {
                 this.addStream(_stream);
             });
         } catch (error) {
-            consoleLog('ERROR -> _addLocalStream', error);
+            this.consoleLog('ERROR -> _addLocalStream', error);
         }
     }
 
     _onCreateDataChanel(_event: {channel: RTCDataChannel}) {
-        consoleLog('PEER -> _onCreateDataChanel', _event);
+        this.consoleLog('PEER -> _onCreateDataChanel', _event);
         this._channel = _event.channel;
 
         this._channel.onmessage = message => {
@@ -156,13 +159,13 @@ class Peer extends EventEmitter {
     }
 
     _onChannelMessage(message: MessageEvent) {
-        consoleLog('message', message);
+        this.consoleLog('message', message);
         this.emit('data', message?.data);
     }
 
     async _onNegotiationNeeded(event) {
         try {
-            consoleLog('onNegotiationNeeded', event);
+            this.consoleLog('onNegotiationNeeded', event);
             if (this.initiator) {
                 await this.createOffer();
             } else {
@@ -173,13 +176,13 @@ class Peer extends EventEmitter {
                 });
             }
         } catch (error) {
-            consoleLog('ERROR -> _onNegotiationNeeded', error);
+            this.consoleLog('ERROR -> _onNegotiationNeeded', error);
         }
     }
 
     _onConnectionStateChange() {
         try {
-            consoleLog('_onConnectionStateChange', this.peerConnection?.connectionState);
+            this.consoleLog('_onConnectionStateChange', this.peerConnection?.connectionState);
             switch (this.peerConnection?.connectionState) {
                 case 'connected':
                     this.emit('connect');
@@ -193,30 +196,30 @@ class Peer extends EventEmitter {
                     break;
             }
         } catch (error) {
-            consoleLog('ERROR -> _onConnectionStateChange', error);
+            this.consoleLog('ERROR -> _onConnectionStateChange', error);
         }
     }
 
     _onSignalStateChange() {
-        consoleLog('_onSignalStateChange', this.peerConnection?.signalingState);
+        this.consoleLog('_onSignalStateChange', this.peerConnection?.signalingState);
     }
 
     _onTrack(event: RTCTrackEvent) {
         try {
-            consoleLog('_onTrack', event);
+            this.consoleLog('_onTrack', event);
             this.remoteMediaStream = (this.remoteMediaStream || new this.wrtc.MediaStream()) as MediaStream;
             this.remoteMediaStream.addTrack(event.track);
             // this.emit('stream', event.stream);
             this.emit('stream', this.remoteMediaStream);
         } catch (error) {
-            consoleLog('ERROR -> _onTrack', error);
+            this.consoleLog('ERROR -> _onTrack', error);
         }
     }
 
     _onIceCandidate(event) {
         try {
-            consoleLog('_onIceCandidate', event);
-            this.peerConnection && consoleLog('ice state', this.peerConnection.iceConnectionState);
+            this.consoleLog('_onIceCandidate', event);
+            this.peerConnection && this.consoleLog('ice state', this.peerConnection.iceConnectionState);
             // When you find a null candidate then there are no more candidates.
             // Gathering of candidates has finished.
             if (!event.candidate) {
@@ -224,12 +227,12 @@ class Peer extends EventEmitter {
             }
             // const iceCandidate = new this.wrtc.RTCIceCandidate(event.candidate);
             //
-            // consoleLog('this.peerConnection.remoteDescription', this.peerConnection.remoteDescription);
+            // this.consoleLog('this.peerConnection.remoteDescription', this.peerConnection.remoteDescription);
             // if (this.peerConnection.remoteDescription === null) {
-            //   consoleLog('push on future', iceCandidate);
+            //   this.consoleLog('push on future', iceCandidate);
             //   this.remoteCandidates.push(iceCandidate);
             // } else {
-            //   consoleLog('set immediately ');
+            //   this.consoleLog('set immediately ');
             //   this.peerConnection.addIceCandidate(iceCandidate);
             // }
 
@@ -245,24 +248,24 @@ class Peer extends EventEmitter {
             // Send the event.candidate onto the person you're calling.
             // Keeping to Trickle ICE Standards, you should send the candidates immediately.
         } catch (error) {
-            consoleLog('ERROR -> _onIceCandidate', error);
+            this.consoleLog('ERROR -> _onIceCandidate', error);
         }
     }
 
     _onError(error) {
         try {
-            consoleLog('_onError', error);
+            this.consoleLog('_onError', error);
             this.peerConnection && this.peerConnection.close();
             this.peerConnection = null;
             this.emit('error', error);
         } catch (_error) {
-            consoleLog('ERROR -> _onError', _error);
+            this.consoleLog('ERROR -> _onError', _error);
         }
     }
 
     _onIceConnectionStateChange() {
         try {
-            this.peerConnection && consoleLog('_onIceConnectionStateChange', this.peerConnection.iceConnectionState);
+            this.peerConnection && this.consoleLog('_onIceConnectionStateChange', this.peerConnection.iceConnectionState);
             switch (this.peerConnection?.iceConnectionState) {
                 case 'connected':
                 case 'completed':
@@ -270,7 +273,7 @@ class Peer extends EventEmitter {
                     break;
             }
         } catch (error) {
-            consoleLog('ERROR -> _onIceConnectionStateChange', error);
+            this.consoleLog('ERROR -> _onIceConnectionStateChange', error);
         }
     }
 
@@ -279,37 +282,37 @@ class Peer extends EventEmitter {
             if (this.destroying) {
                 return;
             }
-            consoleLog('addStream');
+            this.consoleLog('addStream');
             if (this.peerConnection) {
                 _stream.getTracks().forEach(track => (this.peerConnection as RTCPeerConnection).addTrack(track, _stream));
             }
         } catch (error) {
-            consoleLog('ERROR -> addStream', error);
+            this.consoleLog('ERROR -> addStream', error);
         }
     }
 
     async _addIceCandidate(candidate) {
         try {
-            consoleLog('_addIceCandidate');
+            this.consoleLog('_addIceCandidate');
             const iceCandidate = new this.wrtc.RTCIceCandidate(candidate);
             if (this.peerConnection) {
                 await this.peerConnection.addIceCandidate(iceCandidate);
             }
         } catch (e) {
-            consoleLog('ERROR _addIceCandidate', e);
+            this.consoleLog('ERROR _addIceCandidate', e);
         }
     }
 
     async signal(data) {
-        consoleLog('----------- signal------------', data);
+        this.consoleLog('----------- signal------------', data);
         try {
             if (data?.renegotiate && this.initiator) {
-                consoleLog('----------- signal------------ _needsNegotiation');
+                this.consoleLog('----------- signal------------ _needsNegotiation');
                 await this.negotiate();
             }
 
             if (data?.candidate) {
-                consoleLog('----------- signal------------ candidate');
+                this.consoleLog('----------- signal------------ candidate');
                 if (
                     this.peerConnection?.remoteDescription
                     && this.peerConnection?.remoteDescription?.type
@@ -326,7 +329,7 @@ class Peer extends EventEmitter {
                     await this.peerConnection.setRemoteDescription(offerDescription);
 
                     if (this.peerConnection.remoteDescription?.type === 'offer') {
-                        consoleLog(
+                        this.consoleLog(
                             '----------- receive signal------------ create Answer',
                             this.peerConnection.remoteDescription?.type,
                         );
@@ -338,21 +341,21 @@ class Peer extends EventEmitter {
                 }
             }
         } catch (error) {
-            consoleLog('ERROR -> signal', error);
+            this.consoleLog('ERROR -> signal', error);
         }
     }
 
     send(string: string) {
-        consoleLog('PEER -> send');
+        this.consoleLog('PEER -> send');
         try {
             this._channel?.send(string);
         } catch (error) {
-            consoleLog('PEER -> error', error);
+            this.consoleLog('PEER -> error', error);
         }
     }
 
     async negotiate() {
-        consoleLog('negotiate');
+        this.consoleLog('negotiate');
         if (this.initiator) {
             await this.createOffer();
         } else {
@@ -367,9 +370,9 @@ class Peer extends EventEmitter {
     async createOffer() {
         try {
             if (this.peerConnection !== null) {
-                consoleLog('createOffer');
+                this.consoleLog('createOffer');
                 const offerDescription = await this.peerConnection.createOffer(this.offerOptions);
-                consoleLog('offerDescription', offerDescription);
+                this.consoleLog('offerDescription', offerDescription);
                 await this.peerConnection.setLocalDescription(offerDescription);
                 this.emit('signal', {
                     type: offerDescription?.type,
@@ -379,14 +382,14 @@ class Peer extends EventEmitter {
                 throw new Error('peerConnection is null');
             }
         } catch (error) {
-            consoleLog('ERROR -> createOffer', error);
+            this.consoleLog('ERROR -> createOffer', error);
         }
     }
 
     async createAnswer(_offerDescription) {
         try {
             if (this.peerConnection !== null) {
-                consoleLog('receiveOffer');
+                this.consoleLog('receiveOffer');
                 const answerDescription = await this.peerConnection.createAnswer(_offerDescription);
                 await this.peerConnection.setLocalDescription(answerDescription);
                 this.emit('signal', {
@@ -397,7 +400,7 @@ class Peer extends EventEmitter {
                 throw new Error('peerConnection is null');
             }
         } catch (error) {
-            consoleLog(`ERROR -> receiveOffer ${error}`);
+            this.consoleLog(`ERROR -> receiveOffer ${error}`);
         }
     }
 
@@ -408,9 +411,60 @@ class Peer extends EventEmitter {
             this.peerConnection && this.peerConnection.close();
             this.peerConnection = null;
         } catch (error) {
-            consoleLog('ERROR -> destroy', error);
+            this.consoleLog('ERROR -> destroy', error);
         }
     }
+
+    _getStats = (cb: (err: string | null, reports?: any[]) => void) => {
+        this.consoleLog('PEER -> getStats');
+        const flattenValues = report => {
+            if (Object.prototype.toString.call(report.values) === '[object Array]') {
+                report.values.forEach(value => {
+                    Object.assign(report, value);
+                });
+            }
+            return report;
+        };
+        if (this.peerConnection) {
+            if (this.peerConnection.getStats.length === 0) {
+                this.peerConnection.getStats()
+                    .then(res => {
+                        const reports: any[] = [];
+                        res.forEach(report => {
+                            reports.push(flattenValues(report));
+                        });
+                        cb(null, reports);
+                    })
+                    .catch(err => cb(err));
+
+                // Single-parameter callback-based getStats() (non-standard)
+            } else if (this.peerConnection.getStats.length > 0) {
+                // @ts-ignore for non standart browsers
+                this.peerConnection.getStats(res => {
+                    // If we destroy connection in `connect` callback this code might happen to run when actual connection is already closed
+                    if (this.destroyed) return;
+
+                    const reports:any[] = [];
+                    res.result().forEach(result => {
+                        const report: any = {};
+                        result.names().forEach(name => {
+                            report[name] = result.stat(name);
+                        });
+                        report.id = result.id;
+                        report.type = result.type;
+                        report.timestamp = result.timestamp;
+                        reports.push(flattenValues(report));
+                    });
+                    cb(null, reports);
+                    // @ts-ignore for non standart browsers
+                }, err => cb(err));
+
+                // Unknown browser, skip getStats() since it's anyone's guess which style of
+                // getStats() they implement.
+            }
+            cb(null);
+        }
+    };
 }
 
-export default Peer;
+export default HelsiPeer;

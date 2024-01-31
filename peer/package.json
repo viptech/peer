@@ -11,6 +11,6 @@
   "version": "1.0.1",
   "description": "simple peer library",
   "main": "index.js",
-  "author": "Peer HIS team",
+  "author": "yuriy.vip@gmail.com",
   "types": "index.d.ts"
 }
