@@ -17,7 +17,7 @@
     "build": "rollup -c",
     "dev": "rollup -c -w"
   },
-  "name": "peer",
+  "name": "@viptech/peer",
   "version": "1.0.0",
   "description": "simple peer library",
   "main": "peer/index.js",
