@@ -30,7 +30,8 @@ type TOptions = {
     offerOptions?: RTCOfferOptions,
     answerOptions?: RTCAnswerOptions,
     channelName?: string,
-    consoleLog: (...args: any[]) => void,
+    consoleLog?: (...args: any[]) => void,
+    isDebugMode?: boolean,
 }
 
 class HelsiPeer extends EventEmitter {
@@ -57,6 +58,7 @@ class HelsiPeer extends EventEmitter {
     private destroying: boolean;
     private getStats: (cb: (err: string | null, reports?: any[]) => void) => void;
     private consoleLog: (...args: any[]) => void;
+    private isDebugMode: boolean;
 
     constructor(options: TOptions) {
         super();
@@ -73,11 +75,12 @@ class HelsiPeer extends EventEmitter {
         this.remoteCandidates = [];
         this.remoteMediaStream = null;
         this._channel = null;
+        this.isDebugMode = !!options.isDebugMode;
 
         this.destroyed = false;
         this.destroying = false;
 
-        this.consoleLog = options.consoleLog;
+        this.consoleLog = options.consoleLog && this.isDebugMode ? options.consoleLog : () => {};
         this.getStats = cb => {
             this._getStats(cb);
         };
