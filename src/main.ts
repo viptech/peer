@@ -2,7 +2,7 @@
 import { EventEmitter } from 'events';
 import { v4 } from 'uuid';
 
-import { TRTCPeerConnection, TMediaStream, TRTCIceCandidate, TRTCSessionDescription } from './types';
+import { TRTCPeerConnection, TMediaStream, TRTCIceCandidate, TRTCSessionDescription, StatResult } from './types';
 
 const sessionConstraints = {
     mandatory: {
@@ -166,7 +166,7 @@ class HelsiPeer extends EventEmitter {
         this.emit('data', message?.data);
     }
 
-    async _onNegotiationNeeded(event) {
+    async _onNegotiationNeeded(event:Event) {
         try {
             this.consoleLog('onNegotiationNeeded', event);
             if (this.initiator) {
@@ -219,7 +219,7 @@ class HelsiPeer extends EventEmitter {
         }
     }
 
-    _onIceCandidate(event) {
+    _onIceCandidate(event:RTCPeerConnectionIceEvent) {
         try {
             this.consoleLog('_onIceCandidate', event);
             this.peerConnection && this.consoleLog('ice state', this.peerConnection.iceConnectionState);
@@ -255,7 +255,7 @@ class HelsiPeer extends EventEmitter {
         }
     }
 
-    _onError(error) {
+    _onError(error: Event) {
         try {
             this.consoleLog('_onError', error);
             this.peerConnection && this.peerConnection.close();
@@ -294,7 +294,7 @@ class HelsiPeer extends EventEmitter {
         }
     }
 
-    async _addIceCandidate(candidate) {
+    async _addIceCandidate(candidate:RTCIceCandidate) {
         try {
             this.consoleLog('_addIceCandidate');
             const iceCandidate = new this.wrtc.RTCIceCandidate(candidate);
@@ -306,7 +306,12 @@ class HelsiPeer extends EventEmitter {
         }
     }
 
-    async signal(data) {
+    async signal(data:{
+        type: 'renegotiate' & RTCSdpType,
+        renegotiate: boolean,
+        candidate?: RTCIceCandidate,
+        sdp?: RTCSessionDescriptionInit['sdp'],
+    }) {
         this.consoleLog('----------- signal------------', data);
         try {
             if (data?.renegotiate && this.initiator) {
@@ -389,7 +394,7 @@ class HelsiPeer extends EventEmitter {
         }
     }
 
-    async createAnswer(_offerDescription) {
+    async createAnswer(_offerDescription:RTCAnswerOptions) {
         try {
             if (this.peerConnection !== null) {
                 this.consoleLog('receiveOffer');
@@ -420,7 +425,7 @@ class HelsiPeer extends EventEmitter {
 
     _getStats = (cb: (err: string | null, reports?: any[]) => void) => {
         this.consoleLog('PEER -> getStats');
-        const flattenValues = report => {
+        const flattenValues = (report: any) => {
             if (Object.prototype.toString.call(report.values) === '[object Array]') {
                 report.values.forEach(value => {
                     Object.assign(report, value);
@@ -443,7 +448,7 @@ class HelsiPeer extends EventEmitter {
                 // Single-parameter callback-based getStats() (non-standard)
             } else if (this.peerConnection.getStats.length > 0) {
                 // @ts-ignore for non standart browsers
-                this.peerConnection.getStats(res => {
+                this.peerConnection.getStats((res: {result: () => StatResult[]}) => {
                     // If we destroy connection in `connect` callback this code might happen to run when actual connection is already closed
                     if (this.destroyed) return;
 
@@ -460,7 +465,7 @@ class HelsiPeer extends EventEmitter {
                     });
                     cb(null, reports);
                     // @ts-ignore for non standart browsers
-                }, err => cb(err));
+                }, (err: string | null) => cb(err));
 
                 // Unknown browser, skip getStats() since it's anyone's guess which style of
                 // getStats() they implement.
